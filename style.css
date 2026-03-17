@@ -1,22 +1,19 @@
+/* style.css */
 body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: sans-serif;
+  background-color: #f0f0f0;
   margin: 0;
-  background: #0d1117;
-  color: #c9d1d9;
-  font-family: Arial, sans-serif;
-  text-align: center;
-}
-
-.container {
-  margin-top: 20px;
+  padding: 20px;
 }
 
 h1 {
-  color: #58a6ff;
+  margin-bottom: 10px;
 }
 
 canvas {
-  background: #161b22;
-  border: 2px solid #30363d;
-  border-radius: 10px;
-  margin-top: 10px;
+  border: 2px solid #333;
+  background-color: #fff;
 }

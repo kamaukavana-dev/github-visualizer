@@ -1,122 +1,112 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+// script.js
 
-let snake = [{x: 50, y: 150}];
-let dx = 10;
-let dy = 0;
+// Canvas setup
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-let food = spawnFood();
-let obstacles = [];
+const gridSize = 20;
+const canvasWidth = canvas.width;
+const canvasHeight = canvas.height;
 
-let score = 0;
-let level = 1;
+// Load snake images
+const snake1Img = new Image();
+snake1Img.src = 'https://i.imgur.com/QX7hKpF.png'; // Shell icon
+const snake2Img = new Image();
+snake2Img.src = 'https://i.imgur.com/2l0ZpUd.png'; // Scissors icon
 
-document.addEventListener("keydown", changeDirection);
+const fruitImg = new Image();
+fruitImg.src = 'https://i.imgur.com/IaUrttj.png'; // Fruit icon
 
-function spawnFood() {
-  return {
-    x: Math.floor(Math.random() * 60) * 10,
-    y: Math.floor(Math.random() * 30) * 10
-  };
+// Snake objects
+const snake1 = {
+  body: [{x: 5, y: 5}],
+  direction: 'right',
+  nextDirection: 'right',
+};
+
+const snake2 = {
+  body: [{x: 25, y: 15}],
+  direction: 'left',
+  nextDirection: 'left',
+};
+
+// Fruit position
+let fruit = {x: 10, y: 10};
+
+// Key controls
+document.addEventListener('keydown', (e) => {
+  switch(e.key){
+    case 'ArrowUp': if(snake1.direction !== 'down') snake1.nextDirection = 'up'; break;
+    case 'ArrowDown': if(snake1.direction !== 'up') snake1.nextDirection = 'down'; break;
+    case 'ArrowLeft': if(snake1.direction !== 'right') snake1.nextDirection = 'left'; break;
+    case 'ArrowRight': if(snake1.direction !== 'left') snake1.nextDirection = 'right'; break;
+
+    case 'w': if(snake2.direction !== 'down') snake2.nextDirection = 'up'; break;
+    case 's': if(snake2.direction !== 'up') snake2.nextDirection = 'down'; break;
+    case 'a': if(snake2.direction !== 'right') snake2.nextDirection = 'left'; break;
+    case 'd': if(snake2.direction !== 'left') snake2.nextDirection = 'right'; break;
+  }
+});
+
+// Generate random fruit position
+function randomFruit() {
+  const x = Math.floor(Math.random() * (canvasWidth / gridSize));
+  const y = Math.floor(Math.random() * (canvasHeight / gridSize));
+  return {x, y};
 }
 
-function spawnObstacles() {
-  obstacles = [];
-  for (let i = 0; i < level + 2; i++) {
-    obstacles.push({
-      x: Math.floor(Math.random() * 60) * 10,
-      y: Math.floor(Math.random() * 30) * 10
-    });
-  }
-}
+// Update snake positions
+function updateSnake(snake) {
+  snake.direction = snake.nextDirection;
+  const head = {...snake.body[0]};
 
-function changeDirection(e) {
-  const key = e.key;
-
-  if (key === "ArrowUp" && dy === 0) {
-    dx = 0; dy = -10;
-  } else if (key === "ArrowDown" && dy === 0) {
-    dx = 0; dy = 10;
-  } else if (key === "ArrowLeft" && dx === 0) {
-    dx = -10; dy = 0;
-  } else if (key === "ArrowRight" && dx === 0) {
-    dx = 10; dy = 0;
-  }
-}
-
-function update() {
-  const head = {x: snake[0].x + dx, y: snake[0].y + dy};
-
-  // Wall collision
-  if (head.x < 0 || head.x >= 600 || head.y < 0 || head.y >= 300) {
-    resetGame();
-    return;
+  switch(snake.direction) {
+    case 'up': head.y -= 1; break;
+    case 'down': head.y += 1; break;
+    case 'left': head.x -= 1; break;
+    case 'right': head.x += 1; break;
   }
 
-  // Self collision
-  for (let part of snake) {
-    if (part.x === head.x && part.y === head.y) {
-      resetGame();
-      return;
-    }
-  }
+  // Wrap around edges
+  if(head.x < 0) head.x = canvasWidth / gridSize - 1;
+  if(head.x >= canvasWidth / gridSize) head.x = 0;
+  if(head.y < 0) head.y = canvasHeight / gridSize - 1;
+  if(head.y >= canvasHeight / gridSize) head.y = 0;
 
-  // Obstacle collision
-  for (let obs of obstacles) {
-    if (obs.x === head.x && obs.y === head.y) {
-      resetGame();
-      return;
-    }
-  }
+  snake.body.unshift(head);
 
-  snake.unshift(head);
-
-  // Food collision
-  if (head.x === food.x && head.y === food.y) {
-    score++;
-    food = spawnFood();
-
-    // Level up every 5 points
-    if (score % 5 === 0) {
-      level++;
-      spawnObstacles();
-    }
+  // Check fruit collision
+  if(head.x === fruit.x && head.y === fruit.y){
+    fruit = randomFruit();
   } else {
-    snake.pop();
+    snake.body.pop(); // remove tail if not eating fruit
   }
+}
 
+// Draw everything
+function draw() {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+  // Draw fruit
+  ctx.drawImage(fruitImg, fruit.x * gridSize, fruit.y * gridSize, gridSize, gridSize);
+
+  // Draw snake1
+  snake1.body.forEach(segment => {
+    ctx.drawImage(snake1Img, segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+  });
+
+  // Draw snake2
+  snake2.body.forEach(segment => {
+    ctx.drawImage(snake2Img, segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+  });
+}
+
+// Main game loop
+function gameLoop() {
+  updateSnake(snake1);
+  updateSnake(snake2);
   draw();
 }
 
-function draw() {
-  // Clear
-  ctx.fillStyle = "#0d1117";
-  ctx.fillRect(0, 0, 600, 300);
-
-  // Snake
-  ctx.fillStyle = "#39ff14";
-  snake.forEach(s => ctx.fillRect(s.x, s.y, 10, 10));
-
-  // Food
-  ctx.fillStyle = "#ff3b3b";
-  ctx.fillRect(food.x, food.y, 10, 10);
-
-  // Obstacles
-  ctx.fillStyle = "#8b0000";
-  obstacles.forEach(o => ctx.fillRect(o.x, o.y, 10, 10));
-
-  // UI update
-  document.getElementById("score").textContent = score;
-  document.getElementById("level").textContent = level;
-}
-
-function resetGame() {
-  snake = [{x: 50, y: 150}];
-  dx = 10; dy = 0;
-  score = 0;
-  level = 1;
-  obstacles = [];
-  food = spawnFood();
-}
-
-setInterval(update, 100);
+// Run game at fixed interval
+setInterval(gameLoop, 150);
